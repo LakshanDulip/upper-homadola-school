@@ -1,7 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Safe starting point: deny all client access until explicit, audited role rules exist.
-    match /{document=**} { allow read, write: if false; }
+    function approvedAccount() {
+      return request.auth != null
+        && request.auth.token.schoolAccess == true
+        && request.auth.token.role in ['student','teacher','admin','principal','superadmin','developer'];
+    }
+
+    // Only the owner may fetch their minimal, server-maintained account status.
+    // Browser writes and user directory queries are denied.
+    match /users/{uid} {
+      allow get: if approvedAccount() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    // All other school records remain blocked until per-field, per-grade,
+    // per-subject, active-account rules are implemented and reviewed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
