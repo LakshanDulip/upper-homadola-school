@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getDoc, doc } from "firebase/firestore";
 import { onIdTokenChanged, signOut, type User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDatabase } from "@/lib/firebase/client";
-import { isSchoolRole, roleHome, roleLabel, type SchoolRole } from "@/lib/auth/roles";
+import { hasActiveRoleProfile, isSchoolRole, roleHome, roleLabel, type SchoolRole } from "@/lib/auth/roles";
 
 type Session =
   | { state: "loading" }
@@ -18,7 +18,7 @@ function useVerifiedSession(): Session {
   useEffect(() => {
     let active = true;
     let sequence = 0;
-    return onIdTokenChanged(getFirebaseAuth(), async (user) => {
+    const unsubscribe = onIdTokenChanged(getFirebaseAuth(), async (user) => {
       const requestId = ++sequence;
       if (!user) { if (active) setSession({ state: "signed-out" }); return; }
       if (active) setSession({ state: "loading" });
@@ -33,15 +33,16 @@ function useVerifiedSession(): Session {
         // Rules only permit fetching the signed-in user's profile.
         const snapshot = await getDoc(doc(getFirebaseDatabase(), "users", user.uid));
         const profile = snapshot.data();
-        if (!snapshot.exists() || profile?.active !== true || profile.role !== role) {
+        if (!snapshot.exists() || !hasActiveRoleProfile(profile, role)) {
           if (active && requestId === sequence) setSession({ state: "unapproved", detail: "This school account is disabled or its role/profile does not match." });
           return;
         }
-        if (active && requestId === sequence) setSession({ state: "ready", user, role, username: typeof profile.username === "string" ? profile.username : "" });
+        if (active && requestId === sequence) setSession({ state: "ready", user, role, username: typeof profile?.username === "string" ? profile.username : "" });
       } catch {
         if (active && requestId === sequence) setSession({ state: "unapproved", detail: "Could not verify school access. Check the deployed Firestore Rules and try signing in again." });
       }
     });
+    return () => { active = false; sequence++; unsubscribe(); };
   }, []);
   return session;
 }

@@ -119,6 +119,12 @@ dist
 # Firebase cache directory
 .firebase/
 
+# Local Google authentication material (never commit)
+application_default_credentials.json
+*service-account*.json
+*client_secret*.json
+.gcloud/
+
 # TernJS port file
 .tern-port
 

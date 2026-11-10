@@ -3,6 +3,9 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
+    "test:auth": "node --test scripts/auth-roles.test.mjs scripts/bootstrap-admin.test.mjs",
+    "test:bootstrap": "node --test scripts/bootstrap-admin.test.mjs",
+    "admin:inspect": "node scripts/bootstrap-existing-admin.mjs",
     "dev": "next dev",
     "build": "next build",
     "typecheck": "tsc --noEmit"

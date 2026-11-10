@@ -11,6 +11,11 @@ export const roleLabel: Record<SchoolRole, string> = {
 export function isSchoolRole(role: unknown): role is SchoolRole {
   return typeof role === "string" && (schoolRoles as readonly string[]).includes(role);
 }
+export function hasActiveRoleProfile(profile: unknown, role: SchoolRole): boolean {
+  if (!profile || typeof profile !== "object") return false;
+  const value = profile as { active?: unknown; role?: unknown };
+  return value.active === true && value.role === role;
+}
 /** Deterministic sign-in alias; NEVER authoritative for role assignment. */
 export function usernameToAuthEmail(input: string): string | null {
   const username = input.trim().toLowerCase();
